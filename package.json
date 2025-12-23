@@ -1,0 +1,22 @@
+{
+  "name": "practice-scheduler",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "db:push": "drizzle-kit push"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.39.1",
+    "drizzle-zod": "^0.7.0",
+    "pg": "^8.13.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.16.11",
+    "@types/pg": "^8.11.10",
+    "@vercel/node": "^3.2.28",
+    "drizzle-kit": "^0.31.4",
+    "typescript": "5.6.3"
+  }
+}

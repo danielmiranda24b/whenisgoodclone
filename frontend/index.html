@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Practice Scheduler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background: #0f172a; color: #e5e7eb; }
+    header { padding: 1rem 1.5rem; background: #020617; border-bottom: 1px solid #1f2933; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+    header small { color: #9ca3af; font-size: 0.75rem; }
+    .tabs { display: flex; gap: 0.5rem; }
+    .tab-button { border: none; background: #111827; color: #e5e7eb; padding: 0.5rem 0.9rem; border-radius: 999px; cursor: pointer; font-size: 0.85rem; border: 1px solid transparent; }
+    .tab-button.active { background: #2563eb; border-color: #3b82f6; }
+    main { padding: 1rem 1.5rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .card { background: #020617; border-radius: 1rem; padding: 1rem; border: 1px solid #1f2933; box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
+    .section-title { font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; }
+    .section-subtitle { font-size: 0.8rem; color: #9ca3af; margin-bottom: 0.75rem; }
+    label { font-size: 0.85rem; display: block; margin-bottom: 0.25rem; }
+    input[type="text"], input[type="date"] { width: 100%; max-width: 250px; padding: 0.4rem 0.5rem; border-radius: 0.5rem; border: 1px solid #374151; background: #020617; color: #e5e7eb; font-size: 0.85rem; }
+    input[type="text"]:focus, input[type="date"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+    .date-config { margin-top: 1rem; padding: 1rem; background: #111827; border-radius: 0.5rem; border: 1px solid #1f2933; }
+    .date-row { display: flex; gap: 1rem; align-items: end; flex-wrap: wrap; margin-top: 0.5rem; }
+    .date-field { display: flex; flex-direction: column; }
+    .grid-wrapper { overflow-x: auto; margin-top: 1rem; }
+    table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 0.75rem; user-select: none; }
+    th, td { border: 1px solid #111827; padding: 0.25rem 0.4rem; text-align: center; }
+    th { position: sticky; top: 0; background: #020617; z-index: 1; }
+    .time-col { position: sticky; left: 0; background: #020617; z-index: 2; text-align: right; padding-right: 0.5rem; font-weight: 500; }
+    .slot { cursor: pointer; min-width: 40px; transition: background 0.12s ease, transform 0.05s ease; user-select: none; }
+    .slot.available { background: #22c55e33; box-shadow: inset 0 0 0 1px #22c55eaa; }
+    .slot.available:hover { background: #22c55e55; transform: scale(1.02); }
+    .slot:hover { background: #1f2933; }
+    .slot-count-0 { background: #030712; color: #4b5563; }
+    .slot-count-1 { background: #0f766e33; color: #a7f3d0; }
+    .slot-count-2 { background: #22c55e33; color: #bbf7d0; }
+    .slot-count-3plus { background: #22c55e66; color: #ecfdf5; font-weight: 600; }
+    .controls { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    button { border-radius: 999px; border: none; padding: 0.45rem 0.9rem; font-size: 0.8rem; cursor: pointer; background: #2563eb; color: #e5e7eb; display: inline-flex; align-items: center; gap: 0.25rem; }
+    button.secondary { background: #111827; border: 1px solid #374151; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    .pill { font-size: 0.7rem; background: #111827; padding: 0.25rem 0.6rem; border-radius: 999px; border: 1px solid #1f2933; color: #9ca3af; }
+    .legend { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.7rem; color: #9ca3af; }
+    .legend-item { display: inline-flex; align-items: center; gap: 0.25rem; }
+    .legend-swatch { width: 16px; height: 10px; border-radius: 999px; border: 1px solid #0b1120; }
+    .swatch-0 { background: #030712; }
+    .swatch-1 { background: #0f766e33; }
+    .swatch-2 { background: #22c55e33; }
+    .swatch-3 { background: #22c55e66; }
+    .small { font-size: 0.7rem; color: #9ca3af; margin-top: 0.25rem; }
+    .notice { margin-top: 0.75rem; font-size: 0.75rem; color: #9ca3af; }
+    .tag { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 999px; background: #111827; border: 1px solid #1f2933; color: #9ca3af; }
+    .tag span.dot { width: 7px; height: 7px; border-radius: 999px; background: #22c55e; }
+    @media (max-width: 640px) { header { flex-direction: column; align-items: flex-start; gap: 0.5rem; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Practice Scheduler</h1>
+      <small id="dateRangeDisplay">Range: Nov 9-17, 2025 - 7:00-21:00 - 30-minute slots</small>
+    </div>
+    <div class="tabs">
+      <button class="tab-button active" data-tab="input">Enter Availability</button>
+      <button class="tab-button" data-tab="group">Group View</button>
+    </div>
+  </header>
+  <main>
+    <div id="tab-input" class="card">
+      <div class="section-title">Step 1 - Configure Date Range</div>
+      <div class="date-config">
+        <div class="date-row">
+          <div class="date-field">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" value="2025-11-09" />
+          </div>
+          <div class="date-field">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" value="2025-11-17" />
+          </div>
+          <button id="updateDatesBtn">Update Dates</button>
+        </div>
+      </div>
+
+      <div style="margin-top: 1.5rem;">
+        <div class="section-title">Step 2 - Mark your availability</div>
+        <div class="section-subtitle">
+          Type your name, then click/drag or shift+click to select time slots. Green = available.
+        </div>
+        <label for="nameInput">Your name</label>
+        <input type="text" id="nameInput" placeholder="e.g., Kevin" />
+        <div class="small">
+          Tip: Click and drag to select multiple slots, or hold Shift and click to select a range
+        </div>
+        <div class="grid-wrapper" id="inputGrid"></div>
+        <div class="controls">
+          <button id="submitBtn">Submit Availability</button>
+          <button class="secondary" id="clearBtn">Clear Selection</button>
+          <span class="pill" id="selectedCount">0 slots selected</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-group" class="card" style="display: none;">
+      <div class="section-title">Group View</div>
+      <div class="section-subtitle">
+        See everyone's availability combined. Darker green = more people available.
+      </div>
+      <div id="participantList" style="margin-bottom: 1rem;"></div>
+      <div class="grid-wrapper" id="groupGrid"></div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch swatch-0"></span> 0 available</div>
+        <div class="legend-item"><span class="legend-swatch swatch-1"></span> 1 available</div>
+        <div class="legend-item"><span class="legend-swatch swatch-2"></span> 2 available</div>
+        <div class="legend-item"><span class="legend-swatch swatch-3"></span> 3+ available</div>
+      </div>
+      <div class="notice">
+        Refresh to see the latest responses from all participants.
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ========================================
+    // API CONFIGURATION
+    // ========================================
+    // When deployed on Vercel: leave as "" (same domain)
+    // For separate backend: use full URL like "https://your-app.vercel.app"
+    const API_BASE_URL = "";
+    // ========================================
+
+    // ---------- CONFIG ----------
+    let START_DATE = "2025-11-09";
+    let END_DATE = "2025-11-17";
+    const START_HOUR = 7;
+    const END_HOUR = 21;
+    const SLOT_MIN = 30;
+    let EVENT_ID = "fixed-practice-event";
+
+    // ---------- UTILITIES ----------
+    function dateRange(startStr, endStr) {
+      const dates = [];
+      const start = new Date(startStr + "T00:00:00");
+      const end = new Date(endStr + "T00:00:00");
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        dates.push(`${yyyy}-${mm}-${dd}`);
+      }
+      return dates;
+    }
+
+    function formatDateLabel(iso) {
+      const d = new Date(iso + "T00:00:00");
+      const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
+      const month = d.toLocaleDateString(undefined, { month: "short" });
+      const day = d.getDate();
+      return `${weekday} ${month} ${day}`;
+    }
+
+    function formatTimeLabel(hour, minute) {
+      const d = new Date();
+      d.setHours(hour, minute, 0, 0);
+      return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+
+    function generateSlots() {
+      const slots = [];
+      for (let h = START_HOUR; h < END_HOUR; h++) {
+        for (let m = 0; m < 60; m += SLOT_MIN) {
+          slots.push({ hour: h, minute: m });
+        }
+      }
+      return slots;
+    }
+
+    function makeSlotId(dateStr, hour, minute) {
+      const hh = String(hour).padStart(2, "0");
+      const mm = String(minute).padStart(2, "0");
+      return `${dateStr}_${hh}:${mm}`;
+    }
+
+    function updateDateRangeDisplay() {
+      const startD = new Date(START_DATE + "T00:00:00");
+      const endD = new Date(END_DATE + "T00:00:00");
+      const startFmt = startD.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      const endFmt = endD.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      document.getElementById("dateRangeDisplay").textContent = 
+        `Range: ${startFmt}-${endFmt} - ${START_HOUR}:00-${END_HOUR}:00 - ${SLOT_MIN}-minute slots`;
+    }
+
+    // ---------- API FUNCTIONS ----------
+    async function ensureEvent() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/events/${EVENT_ID}`);
+        if (response.ok) return;
+        
+        const dates = dateRange(START_DATE, END_DATE);
+        const timeSlots = generateSlots().map(s => {
+          const hh = String(s.hour).padStart(2, "0");
+          const mm = String(s.minute).padStart(2, "0");
+          return `${hh}:${mm}`;
+        });
+        
+        await fetch(`${API_BASE_URL}/api/events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: EVENT_ID,
+            title: "Practice Scheduler",
+            dates,
+            timeSlots
+          })
+        });
+      } catch (e) {
+        console.error("Error ensuring event:", e);
+      }
+    }
+
+    async function submitAvailability(name, slots) {
+      const response = await fetch(`${API_BASE_URL}/api/events/${EVENT_ID}/responses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participantName: name,
+          selectedSlots: slots
+        })
+      });
+      if (!response.ok) throw new Error("Failed to submit");
+      return await response.json();
+    }
+
+    async function loadGroupData() {
+      const response = await fetch(`${API_BASE_URL}/api/events/${EVENT_ID}/group`);
+      if (!response.ok) return { responses: [] };
+      return await response.json();
+    }
+
+    // ---------- GLOBALS ----------
+    let dates = dateRange(START_DATE, END_DATE);
+    let slots = generateSlots();
+    let availableSlots = new Set();
+    let lastClickedSlot = null;
+    let isDragging = false;
+    let dragMode = null;
+    let mouseIsDown = false;
+    let lastMouseDownSlot = null;
+
+    // ---------- RENDER INPUT GRID ----------
+    function renderInputGrid() {
+      const container = document.getElementById("inputGrid");
+      const table = document.createElement("table");
+
+      const headerRow = document.createElement("tr");
+      const cornerCell = document.createElement("th");
+      cornerCell.textContent = "Time";
+      cornerCell.className = "time-col";
+      headerRow.appendChild(cornerCell);
+
+      dates.forEach((d) => {
+        const th = document.createElement("th");
+        th.textContent = formatDateLabel(d);
+        headerRow.appendChild(th);
+      });
+      table.appendChild(headerRow);
+
+      slots.forEach(({ hour, minute }) => {
+        const row = document.createElement("tr");
+
+        const timeCell = document.createElement("td");
+        timeCell.className = "time-col";
+        timeCell.textContent = formatTimeLabel(hour, minute);
+        row.appendChild(timeCell);
+
+        dates.forEach((dateStr) => {
+          const slotId = makeSlotId(dateStr, hour, minute);
+          const cell = document.createElement("td");
+          cell.className = "slot";
+          cell.dataset.slotId = slotId;
+
+          if (availableSlots.has(slotId)) {
+            cell.classList.add("available");
+          }
+
+          cell.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            mouseIsDown = true;
+            isDragging = false;
+            lastMouseDownSlot = slotId;
+            const isCurrentlySelected = availableSlots.has(slotId);
+            dragMode = isCurrentlySelected ? 'deselect' : 'select';
+          });
+
+          cell.addEventListener("mouseenter", () => {
+            if (mouseIsDown && !isDragging) {
+              isDragging = true;
+              const startCell = document.querySelector(`[data-slot-id="${lastMouseDownSlot}"]`);
+              if (dragMode === 'select') {
+                availableSlots.add(lastMouseDownSlot);
+                if (startCell) startCell.classList.add("available");
+              } else {
+                availableSlots.delete(lastMouseDownSlot);
+                if (startCell) startCell.classList.remove("available");
+              }
+              updateSelectedCount();
+            }
+            
+            if (isDragging) {
+              if (dragMode === 'select' && !availableSlots.has(slotId)) {
+                availableSlots.add(slotId);
+                cell.classList.add("available");
+                updateSelectedCount();
+              } else if (dragMode === 'deselect' && availableSlots.has(slotId)) {
+                availableSlots.delete(slotId);
+                cell.classList.remove("available");
+                updateSelectedCount();
+              }
+            }
+          });
+
+          cell.addEventListener("click", (e) => {
+            if (!isDragging) {
+              handleSlotClick(slotId, e.shiftKey);
+            }
+          });
+
+          row.appendChild(cell);
+        });
+
+        table.appendChild(row);
+      });
+
+      container.innerHTML = "";
+      container.appendChild(table);
+    }
+
+    document.addEventListener("mouseup", () => {
+      mouseIsDown = false;
+      isDragging = false;
+      dragMode = null;
+    });
+
+    function handleSlotClick(slotId, isShiftKey) {
+      if (isShiftKey && lastClickedSlot) {
+        selectRange(lastClickedSlot, slotId);
+      } else {
+        const cell = document.querySelector(`[data-slot-id="${slotId}"]`);
+        if (availableSlots.has(slotId)) {
+          availableSlots.delete(slotId);
+          cell.classList.remove("available");
+        } else {
+          availableSlots.add(slotId);
+          cell.classList.add("available");
+        }
+        lastClickedSlot = slotId;
+      }
+      updateSelectedCount();
+    }
+
+    function selectRange(startSlotId, endSlotId) {
+      const [startDate, startTime] = startSlotId.split('_');
+      const [endDate, endTime] = endSlotId.split('_');
+      
+      if (startDate !== endDate) {
+        const cell = document.querySelector(`[data-slot-id="${endSlotId}"]`);
+        if (availableSlots.has(endSlotId)) {
+          availableSlots.delete(endSlotId);
+          cell.classList.remove("available");
+        } else {
+          availableSlots.add(endSlotId);
+          cell.classList.add("available");
+        }
+        lastClickedSlot = endSlotId;
+        return;
+      }
+
+      const daySlots = [];
+      slots.forEach(({ hour, minute }) => {
+        daySlots.push(makeSlotId(startDate, hour, minute));
+      });
+
+      const startIdx = daySlots.indexOf(startSlotId);
+      const endIdx = daySlots.indexOf(endSlotId);
+      
+      if (startIdx === -1 || endIdx === -1) return;
+
+      const [minIdx, maxIdx] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+      
+      for (let i = minIdx; i <= maxIdx; i++) {
+        const slotId = daySlots[i];
+        availableSlots.add(slotId);
+        const cell = document.querySelector(`[data-slot-id="${slotId}"]`);
+        if (cell) cell.classList.add("available");
+      }
+
+      lastClickedSlot = endSlotId;
+    }
+
+    function updateSelectedCount() {
+      const countEl = document.getElementById("selectedCount");
+      const count = availableSlots.size;
+      countEl.textContent = `${count} slot${count !== 1 ? "s" : ""} selected`;
+    }
+
+    // ---------- RENDER GROUP GRID ----------
+    async function renderGroupGrid() {
+      const data = await loadGroupData();
+      const responses = data.responses || [];
+
+      const participantList = document.getElementById("participantList");
+      if (responses.length === 0) {
+        participantList.innerHTML = '<div class="small">No responses yet.</div>';
+      } else {
+        const tags = responses.map(r => 
+          `<span class="tag"><span class="dot"></span> ${r.participantName}</span>`
+        ).join(" ");
+        participantList.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">${tags}</div>`;
+      }
+
+      const availMap = {};
+      responses.forEach((r) => {
+        r.selectedSlots.forEach((slotId) => {
+          if (!availMap[slotId]) availMap[slotId] = 0;
+          availMap[slotId]++;
+        });
+      });
+
+      const container = document.getElementById("groupGrid");
+      const table = document.createElement("table");
+
+      const headerRow = document.createElement("tr");
+      const cornerCell = document.createElement("th");
+      cornerCell.textContent = "Time";
+      cornerCell.className = "time-col";
+      headerRow.appendChild(cornerCell);
+
+      dates.forEach((d) => {
+        const th = document.createElement("th");
+        th.textContent = formatDateLabel(d);
+        headerRow.appendChild(th);
+      });
+      table.appendChild(headerRow);
+
+      slots.forEach(({ hour, minute }) => {
+        const row = document.createElement("tr");
+
+        const timeCell = document.createElement("td");
+        timeCell.className = "time-col";
+        timeCell.textContent = formatTimeLabel(hour, minute);
+        row.appendChild(timeCell);
+
+        dates.forEach((dateStr) => {
+          const slotId = makeSlotId(dateStr, hour, minute);
+          const count = availMap[slotId] || 0;
+
+          const cell = document.createElement("td");
+          if (count === 0) {
+            cell.className = "slot-count-0";
+          } else if (count === 1) {
+            cell.className = "slot-count-1";
+          } else if (count === 2) {
+            cell.className = "slot-count-2";
+          } else {
+            cell.className = "slot-count-3plus";
+          }
+
+          if (count > 0) {
+            cell.textContent = count;
+          }
+
+          row.appendChild(cell);
+        });
+
+        table.appendChild(row);
+      });
+
+      container.innerHTML = "";
+      container.appendChild(table);
+    }
+
+    // ---------- EVENT HANDLERS ----------
+    document.getElementById("updateDatesBtn").addEventListener("click", async () => {
+      const newStart = document.getElementById("startDate").value;
+      const newEnd = document.getElementById("endDate").value;
+
+      if (!newStart || !newEnd) {
+        alert("Please select both start and end dates.");
+        return;
+      }
+
+      if (new Date(newStart) > new Date(newEnd)) {
+        alert("Start date must be before or equal to end date.");
+        return;
+      }
+
+      START_DATE = newStart;
+      END_DATE = newEnd;
+      EVENT_ID = `event-${START_DATE}-${END_DATE}`;
+
+      dates = dateRange(START_DATE, END_DATE);
+      slots = generateSlots();
+      availableSlots.clear();
+      
+      updateDateRangeDisplay();
+      await ensureEvent();
+      renderInputGrid();
+      updateSelectedCount();
+    });
+
+    document.getElementById("submitBtn").addEventListener("click", async () => {
+      const name = document.getElementById("nameInput").value.trim();
+      if (!name) {
+        alert("Please enter your name.");
+        return;
+      }
+      if (availableSlots.size === 0) {
+        alert("Please select at least one time slot.");
+        return;
+      }
+
+      try {
+        await submitAvailability(name, Array.from(availableSlots));
+        alert("Availability submitted!");
+        availableSlots.clear();
+        renderInputGrid();
+        updateSelectedCount();
+        await renderGroupGrid();
+        switchTab("group");
+      } catch (e) {
+        alert("Error submitting: " + e.message);
+      }
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      availableSlots.clear();
+      renderInputGrid();
+      updateSelectedCount();
+    });
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-button").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === tabName);
+      });
+      document.getElementById("tab-input").style.display = tabName === "input" ? "block" : "none";
+      document.getElementById("tab-group").style.display = tabName === "group" ? "block" : "none";
+
+      if (tabName === "group") {
+        renderGroupGrid();
+      }
+    }
+
+    document.querySelectorAll(".tab-button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        switchTab(btn.dataset.tab);
+      });
+    });
+
+    // ---------- INIT ----------
+    (async function init() {
+      updateDateRangeDisplay();
+      await ensureEvent();
+      renderInputGrid();
+      updateSelectedCount();
+    })();
+  </script>
+</body>
+</html>
