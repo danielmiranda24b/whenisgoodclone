@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Compress-Archive -Path ''.\\\\*'' -DestinationPath ''.\\\\github-export.zip'' -Force\")",
+      "Bash(dir:*)"
+    ]
+  }
+}
