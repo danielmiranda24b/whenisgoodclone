@@ -2,9 +2,10 @@
 
 ## Problem Summary
 Your app fails when submitting availability because:
-1. **Missing database tables** - The `practice_scheduler` schema and tables don't exist in Supabase
-2. **No RLS policies** - Supabase blocks all operations without Row Level Security policies
-3. **Poor error visibility** - Generic error messages hide the actual problem
+1. **CRITICAL: Incorrect Vercel routing** - The `vercel.json` rewrite was catching API routes and redirecting them to the HTML file (causing 405 Method Not Allowed errors)
+2. **Missing database tables** - The `practice_scheduler` schema and tables don't exist in Supabase
+3. **No RLS policies** - Supabase blocks all operations without Row Level Security policies
+4. **Poor error visibility** - Generic error messages hide the actual problem
 
 ## Required Environment Variables for Vercel
 
@@ -75,12 +76,20 @@ WHERE schemaname = 'practice_scheduler';
 
 ### 5. Deploy Your Code Changes
 
-The code fixes have been made to improve error handling. Deploy them:
+**CRITICAL FIX APPLIED**: The `vercel.json` routing has been fixed to exclude API routes from the HTML rewrite.
+
+The following files have been updated:
+- ✅ `vercel.json` - **Fixed rewrite rule** to not intercept API routes (was causing 405 errors)
+- ✅ `api/events/[id]/responses.ts` - Enhanced error logging
+- ✅ `api/events.ts` - Enhanced error logging
+- ✅ `frontend/index.html` - Better error display
+
+Deploy them:
 
 ```bash
 # If using Git:
 git add .
-git commit -m "Fix error handling and add detailed logging"
+git commit -m "Fix Vercel routing and error handling"
 git push
 
 # Vercel will auto-deploy if connected to Git
