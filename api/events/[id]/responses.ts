@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createResponse } from '../../lib/storage';
-import { insertResponseSchema } from '../../lib/schema';
+import { createResponse } from '../../lib/storage.js';
+import { insertResponseSchema } from '../../lib/schema.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -1,5 +1,5 @@
-import { events, responses, type Event, type InsertEvent, type Response, type InsertResponse } from "./schema";
-import { db } from "./db";
+import { events, responses, type Event, type InsertEvent, type Response, type InsertResponse } from "./schema.js";
+import { db } from "./db.js";
 import { eq } from "drizzle-orm";
 
 export async function createEvent(insertEvent: InsertEvent): Promise<Event> {
